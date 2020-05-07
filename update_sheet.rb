@@ -4,6 +4,7 @@ require "googleauth/stores/file_token_store"
 require "fileutils"
 require 'google/apis/sheets_v4'
 require 'yaml'
+require 'mercadopago'
 
 OOB_URI = "urn:ietf:wg:oauth:2.0:oob".freeze
 APPLICATION_NAME = "ML metrics to spreadsheet".freeze
@@ -36,6 +37,18 @@ def authorize
 end
 
 
+def get_mp_metrics(config)
+
+  client_id =  config[0]['client_id']
+  client_secret = config[0]['client_secret']
+  metric_user_id = config[0]['metric_user_id']
+
+  client = MercadoPago::Client.new(client_id, client_secret)
+
+  response = MercadoPago::Request.wrap_get("/users/#{metric_user_id}?access_token=#{client.access_token}", { accept: 'application/json' })
+
+end
+
 # Initialize the API
 service = Google::Apis::SheetsV4::SheetsService.new
 service.client_options.application_name = APPLICATION_NAME
@@ -47,6 +60,31 @@ puts "Loaded spreadsheet_id #{config[0]['spreadsheet_id']}"
 
 #Add rows to spreadsheet
 
+puts "Getting data from ML"
+data = get_mp_metrics(config)
+#puts JSON.pretty_generate(data['seller_reputation']['metrics'])
+metrics = data['seller_reputation']['metrics']
+{
+  "sales": {
+    "period": "60 months",
+    "completed": 0
+  },
+  "claims": {
+    "period": "60 months",
+    "rate": 0,
+    "value": 0
+  },
+  "delayed_handling_time": {
+    "period": "60 months",
+    "rate": 0,
+    "value": 0
+  },
+  "cancellations": {
+    "period": "60 months",
+    "rate": 0,
+    "value": 0
+  }
+}
 
 months = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio',
           'Agosto','Septiembre','Octubre', 'Noviembre', 'Diciembre']
@@ -55,7 +93,6 @@ day_num = Time.now.strftime("%d").to_i
 month_num = Time.now.strftime("%m").to_i
 
 
-puts "update for #{months[month_num-1]} #{day_num}"
 
 
 range_fmt = "#{months[month_num-1]}!B#{day_num}:F#{day_num}"
@@ -63,10 +100,15 @@ range_name = [range_fmt]
 
 
 values = [
-  [day_num, 'ahora','valor','pepe','valor']
+  [day_num, 
+   metrics['sales']['completed'],
+   metrics['claims']['value'], 
+   metrics['delayed_handling_time']['value'], 
+   metrics['cancellations']['value']]
 ]
 
 
+puts "update for #{months[month_num-1]} #{day_num} #{values}"
 values_range = Google::Apis::SheetsV4::ValueRange.new(values: values)
 
 

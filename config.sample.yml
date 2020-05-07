@@ -1,0 +1,8 @@
+---
+- spreadsheet_id: sdasdasd 
+  name: 2020 ML puntuacion
+  client_id: <ML client id>
+  client_secret: <ML secret>
+  metric_user_id: <user id>
+
+
