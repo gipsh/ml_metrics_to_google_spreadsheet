@@ -37,6 +37,14 @@ def authorize
 end
 
 
+def calc_reclamos_mediacion(metrics)
+
+  t = metrics['sales']['completed'] + metrics['claims']['value'] +  metrics['cancellations']['value'] + metrics['delayed_handling_time']['value'] 
+  r = (metrics['claims']['value'] - metrics['cancellations']['value']) 
+  return ((r.to_f/t.to_f)*100).round(2)
+
+end
+
 def get_mp_metrics(config)
 
   client_id =  config[0]['client_id']
@@ -46,7 +54,7 @@ def get_mp_metrics(config)
   client = MercadoPago::Client.new(client_id, client_secret)
 
   response = MercadoPago::Request.wrap_get("/users/#{metric_user_id}?access_token=#{client.access_token}", { accept: 'application/json' })
-
+  return response
 end
 
 # Initialize the API
@@ -64,27 +72,6 @@ puts "Getting data from ML"
 data = get_mp_metrics(config)
 #puts JSON.pretty_generate(data['seller_reputation']['metrics'])
 metrics = data['seller_reputation']['metrics']
-{
-  "sales": {
-    "period": "60 months",
-    "completed": 0
-  },
-  "claims": {
-    "period": "60 months",
-    "rate": 0,
-    "value": 0
-  },
-  "delayed_handling_time": {
-    "period": "60 months",
-    "rate": 0,
-    "value": 0
-  },
-  "cancellations": {
-    "period": "60 months",
-    "rate": 0,
-    "value": 0
-  }
-}
 
 months = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio',
           'Agosto','Septiembre','Octubre', 'Noviembre', 'Diciembre']
@@ -95,16 +82,20 @@ month_num = Time.now.strftime("%m").to_i
 
 
 
-range_fmt = "#{months[month_num-1]}!B#{day_num}:F#{day_num}"
+range_fmt = "#{months[month_num-1]}!B#{day_num+1}:G#{day_num+1}"
 range_name = [range_fmt]
 
 
+puts metrics['claims']['rate'] * 100
+puts metrics['delayed_handling_time']['rate'] * 100
+ 
 values = [
   [day_num, 
-   metrics['sales']['completed'],
-   metrics['claims']['value'], 
+   (metrics['delayed_handling_time']['rate'] * 100).round(2), 
    metrics['delayed_handling_time']['value'], 
-   metrics['cancellations']['value']]
+   (metrics['cancellations']['rate'] * 100).round(2),
+   calc_reclamos_mediacion(metrics),
+   metrics['claims']['rate'] * 100]
 ]
 
 

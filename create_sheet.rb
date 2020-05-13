@@ -7,7 +7,7 @@ require 'yaml'
 
 
 OOB_URI = "urn:ietf:wg:oauth:2.0:oob".freeze
-APPLICATION_NAME = "Drive API Ruby Quickstart".freeze
+APPLICATION_NAME = "ML metrics to spreadsheet".freeze
 CREDENTIALS_PATH = "credentials.json".freeze
 
 # The file token.yaml stores the user's access and refresh tokens, and is
@@ -58,8 +58,8 @@ def create_month_sheet(service, spreadsheet_id, month_name)
   batch_update_spreadsheet_request)
  
   # Create cols
-  cols = [ [ 'Date','Completed sales','Claims','Delayed handling','Cancellations' ] ]
-  range_fmt = "#{month_name}!B1:F1"
+  cols = [ [ 'DIA','DESPACHO', 'DEMORAS','CANCELADAS', 'RECLAMOS EN MEDIACIÓN','CALIDAD DE ATENCIÓN'] ]
+  range_fmt = "#{month_name}!B2:G2"
   range_name = [range_fmt]
   col_range = Google::Apis::SheetsV4::ValueRange.new(values: cols)
 
